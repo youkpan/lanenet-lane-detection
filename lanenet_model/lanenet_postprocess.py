@@ -260,7 +260,7 @@ class LaneNetPostProcessor(object):
     """
     lanenet post process for lane generation
     """
-    def __init__(self, ipm_remap_file_path='./data/tusimple_ipm_remap.yml'):
+    def __init__(self, ipm_remap_file_path='D:\\self-driving\\lanenet-lane-detection/data/tusimple_ipm_remap.yml'):
         """
 
         :param ipm_remap_file_path: ipm generate file path
@@ -402,7 +402,7 @@ class LaneNetPostProcessor(object):
                 end_plot_y = 1350
             elif data_source == 'GTAV640x320':
                 start_plot_y = 170
-                start_plot_y = 320
+                end_plot_y = 320
             else:
                 raise ValueError('Wrong data source now only support tusimple and beec_ccd')
             step = int(math.floor((end_plot_y - start_plot_y) / 10))

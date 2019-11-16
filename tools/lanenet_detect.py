@@ -28,8 +28,8 @@ from lanenet_model import lanenet_postprocess
 
 CFG = global_config.cfg
 import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  
+#os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 def init_args():
     """
@@ -139,7 +139,7 @@ def find_target_point(image):
                             center_x = int(center_x1)
                             find = 1
                             find_y = y
-                            print("find")
+                            #print("find")
                             break
 
             if find==1:
@@ -158,71 +158,77 @@ def find_target_point(image):
 class mlanenet:
     def __init__(self,weights_path):
 
-        self.input_tensor = tf.placeholder(dtype=tf.float32, shape=[1, 256, 512, 3], name='input_tensor')
+        with tf.device('/cpu:0'):
+            self.input_tensor = tf.placeholder(dtype=tf.float32, shape=[1, 256, 512, 3], name='input_tensor')
 
-        net = lanenet.LaneNet(phase='test', net_flag='vgg')
-        self.binary_seg_ret, self.instance_seg_ret = net.inference(input_tensor=self.input_tensor, name='lanenet_model')
+            net = lanenet.LaneNet(phase='test', net_flag='vgg')
+            self.binary_seg_ret, self.instance_seg_ret = net.inference(input_tensor=self.input_tensor, name='lanenet_model')
 
-        self.postprocessor = lanenet_postprocess.LaneNetPostProcessor()
+            self.postprocessor = lanenet_postprocess.LaneNetPostProcessor()
 
-        saver = tf.train.Saver()
-        # Set sess configuration
-        sess_config = tf.ConfigProto()
-        sess_config.gpu_options.per_process_gpu_memory_fraction = CFG.TEST.GPU_MEMORY_FRACTION
-        sess_config.gpu_options.allow_growth = CFG.TRAIN.TF_ALLOW_GROWTH
-        sess_config.gpu_options.allocator_type = 'BFC'
-        self.sess = tf.Session(config=sess_config)
-        with self.sess.as_default():
-            saver.restore(sess=self.sess, save_path=weights_path)
+            saver = tf.train.Saver()
+            # Set sess configuration
+            sess_config = tf.ConfigProto()
+            sess_config.gpu_options.per_process_gpu_memory_fraction = CFG.TEST.GPU_MEMORY_FRACTION
+            sess_config.gpu_options.allow_growth = CFG.TRAIN.TF_ALLOW_GROWTH
+            sess_config.gpu_options.allocator_type = 'BFC'
+            self.sess = tf.Session(config=sess_config)
+            with self.sess.as_default():
+                saver.restore(sess=self.sess, save_path=weights_path)
 
     def inference(self,image):
+        with tf.device('/cpu:0'):
+            image_vis = image
+            image = cv2.resize(image, (512, 256), interpolation=cv2.INTER_LINEAR)
 
-        image = cv2.resize(image, (512, 256), interpolation=cv2.INTER_LINEAR)
-        image = image / 127.5 - 1.0
-        image_vis = image
-        #log.info('Image load complete, cost time: {:.5f}s'.format(time.time() - t_start))
+            image = image / 127.5 - 1.0
+            
+            #log.info('Image load complete, cost time: {:.5f}s'.format(time.time() - t_start))
 
-        with self.sess.as_default():
+            with self.sess.as_default():
 
-            t_start = time.time()
-            binary_seg_image, instance_seg_image = self.sess.run(
-                [self.binary_seg_ret, self.instance_seg_ret],
-                feed_dict={self.input_tensor: [image]}
-            )
+                t_start = time.time()
+                binary_seg_image, instance_seg_image = self.sess.run(
+                    [self.binary_seg_ret, self.instance_seg_ret],
+                    feed_dict={self.input_tensor: [image]}
+                )
 
-            x,y = find_target_point(binary_seg_image[0]* 255)
+                x,y = find_target_point(binary_seg_image[0]* 255)
 
-            t_cost = time.time() - t_start
-            log.info('Single imgae inference cost time: {:.5f}s'.format(t_cost))
+                t_cost = time.time() - t_start
+                log.info('Single imgae inference cost time: {:.5f}s'.format(t_cost))
 
-            postprocess_result = self.postprocessor.postprocess(
-                binary_seg_result=binary_seg_image[0],
-                instance_seg_result=instance_seg_image[0],
-                source_image=image_vis,
-                #data_source='GTAV640x320'
-            )
-            mask_image = postprocess_result['mask_image']
-            lane_mark_array = postprocess_result['lane_mark_array']
-            #print(len(lane_mark_array))
+                postprocess_result = self.postprocessor.postprocess(
+                    binary_seg_result=binary_seg_image[0],
+                    instance_seg_result=instance_seg_image[0],
+                    source_image=image_vis,
+                    #data_source='GTAV640x320'
+                )
+                mask_image = postprocess_result['mask_image']
+                lane_mark_array = []
+                try:
+                    lane_mark_array = postprocess_result['lane_mark_array']
+                except Exception as e:
+                    pass
+                #print(len(lane_mark_array))
 
-            for i in range(CFG.TRAIN.EMBEDDING_FEATS_DIMS):
-                instance_seg_image[0][:, :, i] = minmax_scale(instance_seg_image[0][:, :, i])
-            embedding_image = np.array(instance_seg_image[0], np.uint8)
+                for i in range(CFG.TRAIN.EMBEDDING_FEATS_DIMS):
+                    instance_seg_image[0][:, :, i] = minmax_scale(instance_seg_image[0][:, :, i])
+                embedding_image = np.array(instance_seg_image[0], np.uint8)
 
+                '''
+                plt.figure('mask_image')
+                plt.imshow(mask_image[:, :, (2, 1, 0)])
+                plt.figure('src_image')
+                plt.imshow(image_vis[:, :, (2, 1, 0)])
+                plt.figure('instance_image')
+                plt.imshow(embedding_image[:, :, (2, 1, 0)])
+                plt.figure('binary_image')
+                plt.imshow(binary_seg_image[0] * 255, cmap='gray')
+                plt.show()
+                '''
 
-            plt.figure('mask_image')
-            plt.imshow(mask_image[:, :, (2, 1, 0)])
-            plt.figure('src_image')
-            plt.imshow(image_vis[:, :, (2, 1, 0)])
-            plt.figure('instance_image')
-            plt.imshow(embedding_image[:, :, (2, 1, 0)])
-            plt.figure('binary_image')
-            plt.imshow(binary_seg_image[0] * 255, cmap='gray')
-            plt.show()
-
-
-
-            return x,y,postprocess_result['source_image'],lane_mark_array
+                return x,y,postprocess_result['source_image'],lane_mark_array
 
 
 def test_lanenet(image, weights_path):
@@ -268,13 +274,16 @@ def test_lanenet(image, weights_path):
             binary_seg_result=binary_seg_image[0],
             instance_seg_result=instance_seg_image[0],
             source_image=image_vis,
-            #data_source='GTAV640x320'
+            data_source='GTAV640x320'
         )
         mask_image = postprocess_result['mask_image']
-        lane_mark_array = postprocess_result['lane_mark_array']
-        print(len(lane_mark_array))
-
-
+        lane_mark_array = []
+        try:
+            lane_mark_array = postprocess_result['lane_mark_array']
+        except Exception as e:
+            pass
+        
+        #print("len(lane_mark_array)",len(lane_mark_array))
 
         for i in range(CFG.TRAIN.EMBEDDING_FEATS_DIMS):
             instance_seg_image[0][:, :, i] = minmax_scale(instance_seg_image[0][:, :, i])
