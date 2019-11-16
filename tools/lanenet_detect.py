@@ -99,8 +99,8 @@ def find_target_point(image):
 
     height = image.shape[0]# 720
     width = image.shape[1] #1280
-    topy = int(307/454*height)
-    bottomy = int(400/454*height)
+    topy = int(434/720*height)
+    bottomy = int(600/720*height)
 
     '''
     image = np.zeros(shape=(hight, width,3), dtype=np.uint8)
@@ -116,7 +116,7 @@ def find_target_point(image):
     center_x = int(width/2)
     find_y = 0
     for y in range(bottomy,topy,-2):
-
+        find_left_x = 0
         for incx in range(int(width*0.4)):
             find =0
             xx1=center_x-incx
@@ -126,8 +126,9 @@ def find_target_point(image):
 
             if image[y][xx1]>100 :
                 #print(xx1,y)
-                for dx in range(int(width*0.2)):
-                    xx = center_x+incx-int(width*0.1)+dx
+                find_left_x = xx1
+                for dx in range(int(width-center_x)):
+                    xx = center_x+dx
 
                     xx,yy = get_xy(xx,y,width,height)
                     if image[y][xx]>100 :
@@ -135,18 +136,24 @@ def find_target_point(image):
                         center_x1 = (xx1 + xx)/2
                         #print(center_x1,center_x)
 
-                        if abs(center_x1 - center_x)< int(center_x*0.2):
+                        if abs(center_x1 - center_x)< int(width*0.35):
                             center_x = int(center_x1)
                             find = 1
                             find_y = y
                             #print("find")
                             break
 
+                #if find==0:
+                    #center_x += 1 # int( (xx1 + 255)/2)
+
             if find==1:
                 #cv2.circle(image2, (int(xx1), int(y)), 1, [255], -1)
                 #cv2.circle(image2, (int(xx), int(y)), 1, [255], -1)
                 #cv2.circle(image2, (int(center_x), int(y)), 1, [ 255], -1)
                 break
+
+        #if find_left_x == 0:
+            #center_x -= 1
 
     #plt.figure('image')
     #plt.imshow(image2[:, :])
