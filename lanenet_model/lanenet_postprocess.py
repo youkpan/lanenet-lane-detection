@@ -345,6 +345,7 @@ class LaneNetPostProcessor(object):
         # lane line fit
         fit_params = []
         src_lane_pts = []  # lane pts every single lane
+        lane_mark_array = []
         for lane_index, coords in enumerate(lane_coords):
             if data_source == 'tusimple':
                 tmp_mask = np.zeros(shape=(720, 1280), dtype=np.uint8)
@@ -352,6 +353,9 @@ class LaneNetPostProcessor(object):
             elif data_source == 'beec_ccd':
                 tmp_mask = np.zeros(shape=(1350, 2448), dtype=np.uint8)
                 tmp_mask[tuple((np.int_(coords[:, 1] * 1350 / 256), np.int_(coords[:, 0] * 2448 / 512)))] = 255
+            elif data_source == 'GTAV640x320':
+                tmp_mask = np.zeros(shape=(320, 640), dtype=np.uint8)
+                tmp_mask[tuple((np.int_(coords[:, 1] * 320 / 256), np.int_(coords[:, 0] * 640 / 512)))] = 255
             else:
                 raise ValueError('Wrong data source now only support tusimple and beec_ccd')
             tmp_ipm_mask = cv2.remap(
@@ -396,9 +400,13 @@ class LaneNetPostProcessor(object):
             elif data_source == 'beec_ccd':
                 start_plot_y = 820
                 end_plot_y = 1350
+            elif data_source == 'GTAV640x320':
+                start_plot_y = 170
+                start_plot_y = 320
             else:
                 raise ValueError('Wrong data source now only support tusimple and beec_ccd')
             step = int(math.floor((end_plot_y - start_plot_y) / 10))
+            
             for plot_y in np.linspace(start_plot_y, end_plot_y, step):
                 diff = single_lane_pt_y - plot_y
                 fake_diff_bigger_than_zero = diff.copy()
@@ -431,10 +439,13 @@ class LaneNetPostProcessor(object):
                 lane_color = self._color_map[index].tolist()
                 cv2.circle(source_image, (int(interpolation_src_pt_x),
                                           int(interpolation_src_pt_y)), 5, lane_color, -1)
+
+                lane_mark_array.append([interpolation_src_pt_x,interpolation_src_pt_y])
         ret = {
             'mask_image': mask_image,
             'fit_params': fit_params,
             'source_image': source_image,
+            "lane_mark_array":lane_mark_array,
         }
 
         return ret

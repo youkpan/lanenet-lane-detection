@@ -1,0 +1,1 @@
+py tools/lanenet_detect.py --weights_path ./model/tusimple_lanenet_vgg/tusimple_lanenet_vgg.ckpt  --image_path ./data/tusimple_test_image/0.jpg
