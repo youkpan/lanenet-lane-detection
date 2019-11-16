@@ -228,7 +228,7 @@ class mlanenet:
                 plt.show()
                 '''
 
-                return x,y,postprocess_result['source_image'],lane_mark_array
+                return x,y,postprocess_result['source_image'],lane_mark_array,binary_seg_image[0] * 255
 
 
 def test_lanenet(image, weights_path):
