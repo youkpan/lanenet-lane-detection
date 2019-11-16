@@ -99,8 +99,8 @@ def find_target_point(image):
 
     height = image.shape[0]# 720
     width = image.shape[1] #1280
-    topy = int(353/720*height)
-    bottomy = int(600/720*height)
+    topy = int(307/454*height)
+    bottomy = int(400/454*height)
 
     '''
     image = np.zeros(shape=(hight, width,3), dtype=np.uint8)
@@ -135,7 +135,7 @@ def find_target_point(image):
                         center_x1 = (xx1 + xx)/2
                         #print(center_x1,center_x)
 
-                        if abs(center_x1 - center_x)< int(center_x*0.4):
+                        if abs(center_x1 - center_x)< int(center_x*0.2):
                             center_x = int(center_x1)
                             find = 1
                             find_y = y
@@ -216,17 +216,17 @@ class mlanenet:
                     instance_seg_image[0][:, :, i] = minmax_scale(instance_seg_image[0][:, :, i])
                 embedding_image = np.array(instance_seg_image[0], np.uint8)
 
-                '''
-                plt.figure('mask_image')
-                plt.imshow(mask_image[:, :, (2, 1, 0)])
-                plt.figure('src_image')
-                plt.imshow(image_vis[:, :, (2, 1, 0)])
-                plt.figure('instance_image')
-                plt.imshow(embedding_image[:, :, (2, 1, 0)])
-                plt.figure('binary_image')
-                plt.imshow(binary_seg_image[0] * 255, cmap='gray')
-                plt.show()
-                '''
+                
+                #plt.figure('mask_image')
+                #plt.imshow(mask_image[:, :, (2, 1, 0)])
+                #plt.figure('src_image')
+                #plt.imshow(image_vis[:, :, (2, 1, 0)])
+                #plt.figure('instance_image')
+                #plt.imshow(embedding_image[:, :, (2, 1, 0)])
+                #plt.figure('binary_image')
+                #plt.imshow(binary_seg_image[0] * 255, cmap='gray')
+                #plt.show()
+                
 
                 return x,y,postprocess_result['source_image'],lane_mark_array,binary_seg_image[0] * 255
 
