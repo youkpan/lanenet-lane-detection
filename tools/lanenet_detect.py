@@ -117,32 +117,33 @@ def find_target_point(image):
     find_y = 0
     for y in range(bottomy,topy,-2):
         find_left_x = 0
-        for incx in range(int(width*0.4)):
+        for incx in range(0,int(width*0.5)-3,2):
             find =0
             xx1=center_x-incx
 
             xx1,yy = get_xy(xx1,y,width,height)
             #print(xx1,y,image[y][xx1])
 
-            if image[y][xx1]>100 :
+            if image[y][xx1]>150 and image[y][xx1-2]>150 :
                 #print(xx1,y)
                 find_left_x = xx1
                 for dx in range(int(width-center_x)):
                     xx = center_x+dx
 
                     xx,yy = get_xy(xx,y,width,height)
-                    if image[y][xx]>100 :
+
+                    if image[y][xx]>150 and image[y][xx+2]>150:
 
                         center_x1 = (xx1 + xx)/2
                         #print(center_x1,center_x)
 
-                        if abs(center_x1 - center_x)< int(width*0.35):
+                        if abs(center_x1 - center_x)< int(width*0.3):
                             center_x = int(center_x1)
                             find = 1
                             find_y = y
                             #print("find")
                             break
-
+                #break
                 #if find==0:
                     #center_x += 1 # int( (xx1 + 255)/2)
 
@@ -201,6 +202,7 @@ class mlanenet:
                 )
 
                 x,y = find_target_point(binary_seg_image[0]* 255)
+                '''
 
                 t_cost = time.time() - t_start
                 log.info('Single imgae inference cost time: {:.5f}s'.format(t_cost))
@@ -233,9 +235,10 @@ class mlanenet:
                 #plt.figure('binary_image')
                 #plt.imshow(binary_seg_image[0] * 255, cmap='gray')
                 #plt.show()
+                '''
                 
 
-                return x,y,postprocess_result['source_image'],lane_mark_array,binary_seg_image[0] * 255
+                return x,y,binary_seg_image[0] * 255
 
 
 def test_lanenet(image, weights_path):
